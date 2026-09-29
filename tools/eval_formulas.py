@@ -2,15 +2,19 @@
 """Evaluate the template's own formula strings against the filled-in data.
 
 The engine used here (`formulas`) cannot parse Excel table structured
-references or INDIRECT, so this script takes the *verbatim* formula text out
+references or INDIRECT, so this module takes the *verbatim* formula text out
 of the untouched template and resolves only those two reference forms to the
 literal cells they denote for the CueDetails2 table (headerRowCount=0, ref
 A20:R999, so [#This Row] is the row itself and Column2..Column9 are B..I).
 Everything else -- IFERROR/IF/OR/ISTEXT/COUNTA/INT/MOD/TRUNC/SUM and all the
 arithmetic -- is the template's own formula, evaluated as-is on the values
 read back out of the completed workbook.
+
+`evaluate()` returns {cell coordinate: value} and is also what the preview
+server renders, so the preview shows these numbers and nothing else.
 """
 import re
+import sys
 import warnings
 
 import formulas
@@ -34,59 +38,76 @@ def resolve(f, row):
     return f
 
 
-tpl = openpyxl.load_workbook(SRC)["Template"]
-done = openpyxl.load_workbook(DST)["Template"]
+def evaluate(src=SRC, dst=DST, first_row=20, last_row=31,
+             tmp="/tmp/recalc.xlsx", extra=()):
+    """Return {coord: value} for the template's calculated cells."""
+    tpl = openpyxl.load_workbook(src)["Template"]
+    done = openpyxl.load_workbook(dst)["Template"]
 
-wb = Workbook()
-ws = wb.active
-ws.title = "Template"
-ws["A19"] = "Seq. #"                      # the label the seq formula tests for
-ws["A1"] = tpl["A1"].value                # verbatim title formulas + precedents
-ws["A2"] = tpl["A2"].value
-for c in ("N4", "N6", "D4"):
-    ws[c] = done[c].value
-ws["C13"] = tpl["C13"].value
-ws["D13"] = done["D13"].value             # 45 (program duration, minutes)
-ws["F13"] = done["F13"].value
-for name, coord in (("D14", "D14"), ("F14", "F14")):
-    ws[coord] = tpl[coord].value          # verbatim template total formulas
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Template"
+    ws["A19"] = "Seq. #"                       # the label the seq formula tests for
+    ws["A1"] = tpl["A1"].value                 # verbatim title formulas + precedents
+    ws["A2"] = tpl["A2"].value
+    for c in ("N4", "N6", "D4", "C13", "D13", "F13", "D14", "E14", "F14", "G14", "H14"):
+        ws[c] = done[c].value if done[c].value is not None else tpl[c].value
+    for r in range(first_row, last_row + 1):
+        for c in "BCDEFGHI":                   # inputs read back from the deliverable
+            ws["%s%d" % (c, r)] = done["%s%d" % (c, r)].value
+        for c in "AKJ":                        # template's own formulas, resolved
+            ws["%s%d" % (c, r)] = resolve(tpl["%s%d" % (c, r)].value, r)
+    for c, v in extra:
+        ws[c] = v
 
-for r in range(20, 32):
-    for c in "BCDEFGHI":                  # inputs read back from the deliverable
-        ws["%s%d" % (c, r)] = done["%s%d" % (c, r)].value
-    for c in "AKJ":
-        ws["%s%d" % (c, r)] = resolve(tpl["%s%d" % (c, r)].value, r)
+    wb.save(tmp)
+    sol = formulas.ExcelModel().loads(tmp).finish().calculate()
 
-wb.save("/tmp/recalc.xlsx")
-sol = formulas.ExcelModel().loads("/tmp/recalc.xlsx").finish().calculate()
-
-
-def get(coord):
+    out = {}
     for k, v in sol.items():
-        if "!" in k and k.split("!")[1] == coord.upper():
-            try:
-                return v.value[0, 0]
-            except Exception:
-                return v.value
-    return "<not calculated>"
+        if "!" not in k:
+            continue
+        coord = k.split("!")[1]
+        if ":" in coord:                       # skip range nodes
+            continue
+        try:
+            out[coord] = v.value[0, 0]
+        except Exception:
+            out[coord] = v.value
+    return out
 
 
-print("Template formulas evaluated on the completed workbook's data:\n")
-print("  %-5s %-42s %-9s %-9s %-9s" % ("row", "cue title", "usage", "dur m", "dur s"))
-total = 0
-for r in range(20, 32):
-    m, s = get("J%d" % r), get("K%d" % r)
-    total += int(m) * 60 + int(s)
-    print("  %-5d %-42s %-9s %-9s %-9s  (seq %s, role %s)"
-          % (r, str(done["B%d" % r].value)[:42], get("C%d" % r) or done["C%d" % r].value,
-             m, s, get("A%d" % r), done["L%d" % r].value))
+def _fmt(v):
+    """Render an engine value the way the template's number formats would."""
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return str(v)
 
-print("\n  D14 (Total Music Duration, min) = %s" % get("D14"))
-print("  F14 (Total Music Duration, sec) = %s" % get("F14"))
-print("  cross-check sum of J/K rows     = %ds = %dm %ds"
-      % (total, total // 60, total % 60))
-print("  unique-cue music duration       = %ds = %dm %ds (each cue is listed twice: "
-      "Composer + Publisher row)" % (total // 2, total // 120, (total // 2) % 60))
-print("  A1  (title formula)             = %r" % get("A1"))
-print("  A2  (subtitle formula)          = %r" % get("A2"))
-print("  H14 (auto-calc flag)            = %r" % get("H14"))
+
+def main():
+    vals = evaluate()
+    done = openpyxl.load_workbook(DST)["Template"]
+
+    print("Template formulas evaluated on the completed workbook's data:\n")
+    print("  %-5s %-42s %-9s %-9s %-9s" % ("row", "cue title", "usage", "dur m", "dur s"))
+    total = 0
+    for r in range(20, 32):
+        m, s = vals.get("J%d" % r), vals.get("K%d" % r)
+        total += int(float(m)) * 60 + int(float(s))
+        print("  %-5d %-42s %-9s %-9s %-9s  (seq %s, role %s)"
+              % (r, str(done["B%d" % r].value)[:42], done["C%d" % r].value,
+                 _fmt(m), _fmt(s), _fmt(vals.get("A%d" % r)), done["L%d" % r].value))
+
+    print("\n  D14 (Total Music Duration, min) = %s" % _fmt(vals.get("D14")))
+    print("  F14 (Total Music Duration, sec) = %s" % _fmt(vals.get("F14")))
+    print("  cross-check sum of J/K rows     = %ds = %dm %ds"
+          % (total, total // 60, total % 60))
+    print("  unique-cue music duration       = %ds = %dm %ds (each cue is listed twice: "
+          "Composer + Publisher row)" % (total // 2, total // 120, (total // 2) % 60))
+    print("  A1  (title formula)             = %r" % vals.get("A1"))
+    print("  A2  (subtitle formula)          = %r" % vals.get("A2"))
+    print("  H14 (auto-calc flag)            = %r" % vals.get("H14"))
+
+
+if __name__ == "__main__":
+    sys.exit(main())
