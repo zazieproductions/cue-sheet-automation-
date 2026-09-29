@@ -156,10 +156,11 @@ for i, (title, ih, im, isec, oh, om, osec) in enumerate(CUES):
         ok = (B == title and C == "BI" and (D, E, F) == (ih, im, isec)
               and (G, H, I) == (oh, om, osec) and L == role
               and Q == "BMI" and R == 1
-              and ((M == "ZAZIE" and N == "PRODUCTIONS" and O is None)
+              and ((M == "ZAZIE" and N == "PRODUCTIONS" and O is None and P is None)
                    if role == "Composer" else
-                   (M is None and N is None and O == "Zazie Productions Publishing"))
-              and P is None)
+                   (M is None and N is None
+                    and O == "Zazie Productions Publishing"
+                    and P == "01372389230")))
         check("row %d %s: %s" % (r, role, title), ok,
               "B=%r C=%r in=%s:%s:%s out=%s:%s:%s L=%r M=%r N=%r O=%r P=%r Q=%r R=%r"
               % (B, C, D, E, F, G, H, I, L, M, N, O, P, Q, R))
@@ -193,6 +194,11 @@ check("no stray data below the cue block", not dirty, str(dirty[:8]))
 check("R column share cells keep percent format 0.00%",
       all(tb["R%d" % r].number_format == "0.00%" for r in range(20, 32)),
       tb["R20"].number_format)
+check("Publisher IPI 01372389230 on the 6 Publisher rows only, stored as text "
+      "so the leading zero survives the column's numeric format",
+      all(tb["P%d" % r].value == "01372389230" and isinstance(tb["P%d" % r].value, str)
+          for r in (21, 23, 25, 27, 29, 31))
+      and all(tb["P%d" % r].value is None for r in (20, 22, 24, 26, 28, 30)))
 check("E/F time cells keep 00 format",
       tb["E20"].number_format == "00" and tb["F20"].number_format == "00",
       "%s/%s" % (tb["E20"].number_format, tb["F20"].number_format))

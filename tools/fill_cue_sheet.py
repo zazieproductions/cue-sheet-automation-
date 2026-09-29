@@ -28,6 +28,8 @@ PROGRAM_DURATION_MIN = 45
 WRITER_FIRST = "ZAZIE"            # from BMI registered name "PRODUCTIONS, ZAZIE"
 WRITER_LAST = "PRODUCTIONS"
 PUBLISHER = "Zazie Productions Publishing"
+PUBLISHER_IPI = "01372389230"      # stored as text: column P is number-formatted
+                                   # "0", which would drop the leading zero
 PRO = "BMI"
 SHARE = 1                          # 100% -- column R is number-formatted 0.00%
 
@@ -111,8 +113,8 @@ def build_sheet(xml):
                 # M/N (writer first/last) stay blank on publisher rows:
                 # the template strikes them out when Role = Publisher.
                 xml = set_text(xml, "O%d" % r, PUBLISHER)
-                # P (Publisher IPI #) intentionally left blank -- only a
-                # BMI Publisher Number (4380631) was supplied, not an IPI.
+                # P = Publisher IPI # (the template's only IPI column, hidden)
+                xml = set_text(xml, "P%d" % r, PUBLISHER_IPI)
             xml = set_text(xml, "Q%d" % r, PRO)       # PRO / Affiliation
             xml = set_number(xml, "R%d" % r, SHARE)   # Shares % (0.00% format)
     return xml

@@ -29,7 +29,7 @@ recalculates the untouched formulas when the file opens).
 | L | Role | `Composer` on odd cue rows, `Publisher` on even cue rows |
 | M / N | Composer First / Last Name | ZAZIE / PRODUCTIONS (BMI registered name *PRODUCTIONS, ZAZIE*) |
 | O | Publisher Name | Zazie Productions Publishing |
-| P | Publisher IPI # | **blank — see Missing Information** |
+| P | Publisher IPI # | 01372389230 (Publisher rows only) |
 | Q | PRO / Affiliation | BMI |
 | R | Shares | 1 (column is formatted `0.00%`, so it displays **100.00%**) |
 
@@ -79,9 +79,16 @@ nothing was typed into them.
   i.e. it is designed for one party per row, which is why each cue has two rows.
   Those cells were left blank accordingly, so no struck-out text appears.
 * Column **P** is the only IPI field in this template and its header sits under
-  **Publisher**, so it asks for a *Publisher* IPI #. Only a BMI Publisher Number
-  (4380631) was supplied, so per instruction it was left blank rather than
-  substituted. Column P is hidden in the template and stays hidden.
+  **Publisher**, so it asks for a *Publisher* IPI #. It now holds
+  **01372389230** on the six Publisher rows, and is blank on the Composer rows.
+  It is stored as text rather than as a number on purpose: the column's number
+  format is `0`, so a numeric entry would display `1372389230` and silently drop
+  the leading zero. Excel may therefore show its "number stored as text" marker
+  on those cells — that is expected and is the safer option for an 11-digit IPI.
+  Column P is hidden in the template and stays hidden; unhide it to see the IPIs.
+* The **BMI publisher account number 4380631** has no field in this template
+  (the only publisher identifier column is the IPI one), so it is recorded here
+  and in `Zazie_Productions_Publishing.md` only.
 * Column **R** is number-formatted `0.00%`. 100% is therefore stored as `1` and
   displays as `100.00%`; typing `100` would display `10000.00%`.
 * There is **no writer-IPI field** anywhere in this template (columns are
@@ -89,7 +96,7 @@ nothing was typed into them.
 
 ## Quality control actually run
 
-`python3 tools/qc_cue_sheet.py` — 56 checks, all passed, exit code 0: identical package part
+`python3 tools/qc_cue_sheet.py` — 57 checks, all passed, exit code 0: identical package part
 list; only sheet1.xml + workbook.xml changed; all 24 XML parts well-formed;
 styles.xml / sharedStrings.xml / hidat sheet / table definitions / printer
 settings byte-identical; hidden `hidat` sheet still hidden; 9 data-validation
@@ -118,6 +125,10 @@ programmatically as described above.
 Fields left blank because the information was not supplied (or was explicitly
 requested to be left blank). Nothing was invented.
 
+**Resolved in this revision:** Publisher IPI / CAE **01372389230** was supplied
+and entered in column P on the six Publisher rows. (Earlier drafts left P blank
+because only the BMI account number had been given.)
+
 **Requested blank by instruction**
 1. Episode Title (N6)
 2. Episode Number (N8)
@@ -133,7 +144,7 @@ requested to be left blank). Nothing was invented.
 10. Program Title AKA(s) (N5) and Episode Title AKA(s) (N7)
 11. Production Company mailing address (N12)
 12. Cue Sheet Prepared By (N13) and Email Address (N14)
-13. **Publisher IPI / CAE** (P) — template asks for an IPI #; only BMI Publisher Number 4380631 was provided
-14. **Writer IPI / CAE 01280391067** — recorded here; this template has no writer-IPI field to hold it
+13. **Writer IPI / CAE 01280391067** — recorded here; this template has no writer-IPI field to hold it
+14. BMI publisher account number **4380631** — no field for it in this template
 15. Public credit "Zazie Productions" — the template only has First/Last name fields; the BMI registered name `PRODUCTIONS, ZAZIE` was used instead
 16. Per-cue scene numbers / descriptions and any co-writer or co-publisher splits (none reported; single writer, single publisher at 100%/100% assumed per instruction)
