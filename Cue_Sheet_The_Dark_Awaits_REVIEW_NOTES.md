@@ -147,4 +147,4 @@ because only the BMI account number had been given.)
 13. **Writer IPI / CAE 01280391067** — recorded here; this template has no writer-IPI field to hold it
 14. BMI publisher account number **4380631** — no field for it in this template
 15. Public credit "Zazie Productions" — the template only has First/Last name fields; the BMI registered name `PRODUCTIONS, ZAZIE` was used instead
-16. Per-cue scene numbers / descriptions and any co-writer or co-publisher splits (none reported; single writer, single publisher at 100%/100% assumed per instruction)
+16. Per-cue scene numbers / descriptions. No co-writer and **no co-publisher** (confirmed 2026-09-29) — single writer, single publisher, 100% / 100%.
