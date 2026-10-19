@@ -79,6 +79,8 @@ def evaluate(src=SRC, dst=DST, first_row=20, last_row=31,
 
 def _fmt(v):
     """Render an engine value the way the template's number formats would."""
+    if v is None or v == "":
+        return ""
     if isinstance(v, float) and v.is_integer():
         return str(int(v))
     return str(v)
@@ -93,17 +95,20 @@ def main():
     total = 0
     for r in range(20, 32):
         m, s = vals.get("J%d" % r), vals.get("K%d" % r)
-        total += int(float(m)) * 60 + int(float(s))
+        # Publisher continuation rows carry no cue timing in this template's
+        # grouped layout, so their J/K formulas correctly evaluate to "".
+        if m not in (None, "") and s not in (None, ""):
+            total += int(float(m)) * 60 + int(float(s))
         print("  %-5d %-42s %-9s %-9s %-9s  (seq %s, role %s)"
-              % (r, str(done["B%d" % r].value)[:42], done["C%d" % r].value,
+              % (r, str(done["B%d" % r].value or "")[:42], done["C%d" % r].value or "",
                  _fmt(m), _fmt(s), _fmt(vals.get("A%d" % r)), done["L%d" % r].value))
 
     print("\n  D14 (Total Music Duration, min) = %s" % _fmt(vals.get("D14")))
     print("  F14 (Total Music Duration, sec) = %s" % _fmt(vals.get("F14")))
     print("  cross-check sum of J/K rows     = %ds = %dm %ds"
           % (total, total // 60, total % 60))
-    print("  unique-cue music duration       = %ds = %dm %ds (each cue is listed twice: "
-          "Composer + Publisher row)" % (total // 2, total // 120, (total // 2) % 60))
+    print("  (timing sits on each cue's first party row only, so the "
+          "template total is the unique-music duration)")
     print("  A1  (title formula)             = %r" % vals.get("A1"))
     print("  A2  (subtitle formula)          = %r" % vals.get("A2"))
     print("  H14 (auto-calc flag)            = %r" % vals.get("H14"))

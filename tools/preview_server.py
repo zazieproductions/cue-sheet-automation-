@@ -218,11 +218,11 @@ them (Seq. #, Duration, Total Music Duration). Cells marked
 <span><span class="sw" style="background:#fff8e6"></span>column P is hidden in the workbook</span></p>
 %s
 
-<div class="banner" style="border-left-color:#c98a00"><b>Note:</b> Total Music Duration
-reads <b>50 min. 16 sec.</b> because the template sums every listed row and each cue is
-listed twice (one Composer row, one Publisher row). The unique music is
-<b>25 min. 8 sec.</b> Clearing D:I on the six Publisher rows makes the auto-total read
-25:08 \u2014 left duplicated as instructed.</div>
+<div class="banner" style="border-left-color:#137a3d"><b>Grouped cue layout:</b>
+each cue's title, usage and timings appear on its first (Composer) row only; the
+following Publisher row intentionally leaves those columns blank. That is this
+template's sample-sheet layout, and it makes Seq. # number the six cues and
+Total Music Duration read the actual unique music: <b>25 min. 8 sec.</b></div>
 
 <h2>Verification</h2><div class="qc"><span class="ok">%d checks passed</span>,
 <span class="%s">%d failed</span> \u2014 <code>tools/qc_cue_sheet.py</code>, run when this
